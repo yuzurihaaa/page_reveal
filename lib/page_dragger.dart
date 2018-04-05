@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:material_page_reveal/pager_indicator.dart';
@@ -82,9 +83,71 @@ class _PageDraggerState extends State<PageDragger> {
   }
 }
 
+class AnimatedPageDragger {
+  static const PERCENT_PER_MILLISECOND = 0.005;
+
+  final slideDirection;
+  final transitionGoal;
+
+  AnimationController animationController;
+
+  AnimatedPageDragger({
+    this.slideDirection,
+    this.transitionGoal,
+    slidePercent,
+    StreamController<SlideUpdate> slideUpdateStream,
+    TickerProvider vsync,
+  }) {
+    final startSlidePercent = slidePercent;
+    var endSlidePercent;
+    var duration;
+
+    if (transitionGoal == TransitionGoal.open) {
+      endSlidePercent = 1.0;
+      final slideRemaining = 1.0 - slidePercent;
+      duration = new Duration(
+          milliseconds: (slideRemaining / PERCENT_PER_MILLISECOND).round());
+    } else {
+      endSlidePercent = 0.0;
+      duration = new Duration(
+          milliseconds: (slidePercent / PERCENT_PER_MILLISECOND).round());
+    }
+
+    animationController =
+        new AnimationController(duration: duration, vsync: vsync)
+          ..addListener(() {
+            final slidePercent = lerpDouble(
+                startSlidePercent, endSlidePercent, animationController.value);
+
+            new SlideUpdate(slideDirection, slidePercent, UpdateType.animating);
+          })
+          ..addStatusListener((AnimationStatus status) {
+            if (status == AnimationStatus.completed) {
+              slideUpdateStream.add(new SlideUpdate(
+                  slideDirection, endSlidePercent, UpdateType.doneDragging));
+            }
+          });
+  }
+
+  run () {
+    animationController.forward(from: 0.0);
+  }
+
+  dispose () {
+    animationController.dispose();
+  }
+}
+
+enum TransitionGoal {
+  open,
+  close,
+}
+
 enum UpdateType {
   dragging,
   doneDragging,
+  animating,
+  doneAnimating,
 }
 
 /// We need to tell other widget the slide event!

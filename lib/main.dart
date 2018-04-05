@@ -29,6 +29,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   StreamController<SlideUpdate> slideUpdateStream;
+  AnimatedPageDragger animatedPageDragger;
 
   /// These are all we need to controll the widgets
   int activeIndex = 0;
