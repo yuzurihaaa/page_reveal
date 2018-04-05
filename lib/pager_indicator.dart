@@ -10,6 +10,18 @@ class PagerIndicator extends StatelessWidget {
 
   const PagerIndicator({Key key, this.viewModel}) : super(key: key);
 
+  getPercentValue (int i) {
+    if (i == viewModel.activeIndex) {
+      return 1.0 - viewModel.slidePercent;
+    } else if (i == viewModel.activeIndex - 1 && viewModel.slideDirection == SlideDirection.leftToRight) {
+      return viewModel.slidePercent;
+    } else if (i == viewModel.activeIndex + 1 && viewModel.slideDirection == SlideDirection.rightToLeft) {
+      return viewModel.slidePercent;
+    } else {
+      return 0.0;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     List<PageBubble> bubbles = [];
@@ -23,24 +35,10 @@ class PagerIndicator extends StatelessWidget {
 
 
       /// Set percentActive according to slide percentage and direction
-      if (i == viewModel.activeIndex) {
+      percentActive = getPercentValue(i);
 
-        percentActive = 1.0 - viewModel.slidePercent;
-
-      } else if (i == viewModel.activeIndex - 1 && viewModel.slideDirection == SlideDirection.leftToRight) {
-
-        percentActive = viewModel.slidePercent;
-
-      } else if (i == viewModel.activeIndex + 1 && viewModel.slideDirection == SlideDirection.rightToLeft) {
-
-        percentActive = viewModel.slidePercent;
-
-
-      } else {
-        percentActive = 0.0;
-      }
-
-      bool isHollow = i >= viewModel.activeIndex;
+      bool isHollow = i >= viewModel.activeIndex
+          || (i == viewModel.activeIndex && viewModel.slideDirection == SlideDirection.leftToRight);
 
       bubbles.add(new PageBubble(
         viewModel: new PageBubbleViewModel(
@@ -51,10 +49,36 @@ class PagerIndicator extends StatelessWidget {
       ));
     }
 
+    final bubbleWidth = 55.0;
+
+    final baseTranslation = (viewModel.pages.length * bubbleWidth / 2) - (bubbleWidth / 2);
+
+    var translation = baseTranslation - (viewModel.activeIndex * bubbleWidth);
+
+    /// We wanna offset to how much we're sliding
+
+    switch(viewModel.slideDirection) {
+      case SlideDirection.leftToRight:
+        translation += bubbleWidth * viewModel.slidePercent;
+        break;
+      case SlideDirection.rightToLeft:
+        translation -= bubbleWidth * viewModel.slidePercent;
+        break;
+      default:
+    }
     return new Column(
       children: <Widget>[
         new Expanded(child: new Container()),
-        new Row(mainAxisAlignment: MainAxisAlignment.center, children: bubbles)
+        new Transform(
+          /// Now let's move the position so that the main will always stay mid
+          transform: new Matrix4.translationValues(translation, 0.0, 0.0),
+          child: new Padding(
+            padding: const EdgeInsets.only(bottom: 10.0),
+            child: new Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: bubbles),
+          ),
+        )
       ],
     );
   }
@@ -67,26 +91,29 @@ class PageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return new Padding(
-      padding: const EdgeInsets.all(10.0),
-      child: new Container(
-
-        /// Lets make a min and max size change according for activePercent
-        width: lerpDouble(20.0, 45.0, viewModel.activePercent),
-        height: lerpDouble(20.0, 45.0, viewModel.activePercent),
-        decoration: new BoxDecoration(
-          shape: BoxShape.circle,
-          color: viewModel.isHollow ? color.withAlpha((0x88 * viewModel.activePercent).round()) : color,
-          border: new Border.all(
-            color: viewModel.isHollow ? color.withAlpha((0x88 * (1.0 - viewModel.activePercent)).round()) : Colors.transparent,
-            width: 3.0,
+    return new Container(
+      width: 55.0,
+      height: 55.0,
+      child: new Center(
+        child: new Container(
+          /// Lets make a min and max size change according for activePercent
+          width: lerpDouble(20.0, 45.0, viewModel.activePercent),
+          height: lerpDouble(20.0, 45.0, viewModel.activePercent),
+          decoration: new BoxDecoration(
+            shape: BoxShape.circle,
+            color: viewModel.isHollow ? color.withAlpha((0x88 * viewModel.activePercent).round()) : color,
+            border: new Border.all(
+              color: viewModel.isHollow ? color.withAlpha((0x88 * (1.0 - viewModel.activePercent)).round()) : Colors.transparent,
+              width: 3.0,
+            ),
           ),
-        ),
-        child: new Opacity(
-          opacity: viewModel.activePercent,
-          child: new Image.asset(
-            viewModel.iconAssetPath,
-            color: viewModel.color,
+          child: new Opacity(
+            opacity: viewModel.activePercent,
+            // ignore: conflicting_dart_import
+            child: new Image.asset(
+              viewModel.iconAssetPath,
+              color: viewModel.color,
+            ),
           ),
         ),
       ),
@@ -106,7 +133,7 @@ class PagerIndicatorViewModel {
       this.pages, this.activeIndex, this.slideDirection, this.slidePercent);
 }
 
-/// Viewmodel of each bubble
+/// ViewModel of each bubble
 class PageBubbleViewModel {
   final String iconAssetPath;
   final Color color;

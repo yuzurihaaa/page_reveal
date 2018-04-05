@@ -29,7 +29,7 @@ class CircleRevealClipper extends CustomClipper<Rect> {
   Rect getClip(Size size) {
 
     /// Let's set the center of the circle towards to bottom
-    final epicenter = new Offset(size.width / 2, size.height * 0.9);
+    final epicenter = new Offset(size.width / 2, size.height * 0.98);
 
     /// Let's calculate distance from epicenter to the top left conter to make sure we fill the screen
    double theta = atan(epicenter.dy / epicenter.dx);
