@@ -62,7 +62,6 @@ class _PageDraggerState extends State<PageDragger> {
       widget.slideUpdateStream.add(
           new SlideUpdate(slideDirection, slidePercent, UpdateType.dragging));
 
-      print('Dragging $slideDirection at $slidePercent%');
     }
   }
 
@@ -116,6 +115,7 @@ class AnimatedPageDragger {
     animationController =
         new AnimationController(duration: duration, vsync: vsync)
           ..addListener(() {
+            print(animationController.value);
             final slidePercent = lerpDouble(
                 startSlidePercent, endSlidePercent, animationController.value);
 
@@ -124,7 +124,7 @@ class AnimatedPageDragger {
           ..addStatusListener((AnimationStatus status) {
             if (status == AnimationStatus.completed) {
               slideUpdateStream.add(new SlideUpdate(
-                  slideDirection, endSlidePercent, UpdateType.doneDragging));
+                  slideDirection, endSlidePercent, UpdateType.doneAnimating));
             }
           });
   }
